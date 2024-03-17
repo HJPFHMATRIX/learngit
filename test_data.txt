@@ -1,0 +1,278 @@
+99
+2
+0 42
+42 0
+3
+0 8468 6335
+8468 0 6501
+6335 6501 0
+4
+0 9170 5725 9359
+9170 0 1479 6963
+#include<iostream>
+#include <vector>
+#include <algorithm>
+#include<stdlib.h>
+#include<time.h>
+using namespace std;
+//稳定的排序算法：直接插入排序，冒泡排序，归并排序，基数排序
+//不稳定的排序算法：希尔排序，直接选择排序，堆排序，快速排序
+//链表定义
+struct Node
+{
+    int val = 0;
+    Node *next = nullptr;
+    Node(int x = 0) : val(x) {}
+};
+void swap(int& a, int& b){
+	int temp=a; 
+	a=b;
+	b=temp;
+}
+//print the vector
+void print(vector<int>& v){
+	cout<<"print the vector"<<endl;
+	for(int i:v){
+		cout<<i<<" ";
+	}
+	cout<<endl;
+}
+//print the list
+void print(Node* head){
+	cout<<"print the list:"<<endl;
+	if(head==nullptr) return;
+	Node* cur=head->next;
+	while(cur!=nullptr){
+		cout<<cur->val<<" ";
+		cur=cur->next;
+	}
+	cout<<endl;
+}
+//希尔排序辅助函数
+void sort_interval(vector<int>& v,int increment,int& cnt){
+	int n=v.size();
+	for(int start=0;start<increment;start++){
+		int first_unsorted,position,current;
+		for(first_unsorted=start+increment;first_unsorted<n;first_unsorted+=increment){
+			if(v[first_unsorted]<v[first_unsorted-increment]){
+				cnt+=2;
+				position=first_unsorted;
+				current=v[first_unsorted];
+				do{
+					cnt+=2;
+					v[position]=v[position-increment];
+					position-=increment;
+				}while(position-increment>=0&&v[position-increment]>current);
+				v[position]=current;
+			}
+		}
+	}
+}
+//希尔排序函数主体
+void shell_sort(vector<int>& v){
+	int cnt=0;
+	int n=v.size();
+	int increment=n/3+1;
+	while(1){
+		cnt++;
+		sort_interval(v,increment,cnt);
+		if(increment==1) break;
+		increment=increment/3+1;
+	}
+	cout<<"shell_sort finished"<<endl;
+	cout<<"run time for shell_sort is "<<cnt<<endl;
+}
+//数组归并排序辅助函数
+void merge(vector<int>& v,int sub1,int sub4){
+	vector<int> temp(sub4-sub1+1);
+	int sub2=(sub1+sub4)/2;
+	int sub3=sub2+1;
+	int sub=0;
+	int start=sub1;
+	while(sub1<=sub2||sub3<=sub4){
+		int left=sub1<=sub2?v[sub1]:INT32_MAX;
+		int right=sub3<=sub4?v[sub3]:INT32_MAX;
+		if(left<right){
+			temp[sub++]=left;
+			sub1++;
+		}
+		else{
+			temp[sub++]=right;
+			sub3++;
+		}
+	}
+	sub=0;
+	for(int i=start;i<=sub4;i++){
+		v[i]=temp[sub++];
+	}
+}
+//数组归并排序函数主体
+void merge_sort(vector<int>& v,int low,int high){
+	if(low>=high) return;
+	int mid=(low+high)/2;
+	merge_sort(v,low,mid);
+	merge_sort(v,mid+1,high);
+	merge(v,low,high);
+	if(low==0&&high==v.size()-1) cout<<"merge_sort for a array finished"<<endl;
+}
+//链表归并排序辅助函数
+Node* divide_from(Node* head){
+    if(head==nullptr) return nullptr;
+    Node *pos,*midpoint,*second_half;
+    pos=head->next;
+    midpoint=head;
+    while(pos!=nullptr&&pos->next!=nullptr){
+        pos=pos->next->next;
+        midpoint=midpoint->next;
+    }
+    second_half=midpoint->next;
+    midpoint->next=nullptr;
+    // cout<<"divide_from"<<endl;
+    return second_half;
+}
+Node* merge(Node* head1, Node*head2){
+    Node *dummy=new Node();
+    Node *last=dummy;
+    while(head1!=nullptr&&head2!=nullptr){
+        if(head1->val<head2->val){
+            last->next=head1;
+            head1=head1->next;
+            last=last->next;
+        }
+        else{
+            last->next=head2;
+            head2=head2->next;
+            last=last->next;
+        }
+    }
+    while(head1!=nullptr){
+        last->next=head1;
+        head1=head1->next;
+        last=last->next;
+    }
+    while(head2!=nullptr){
+        last->next=head2;
+        head2=head2->next;
+        last=last->next;
+    }
+    Node* to_return=dummy->next;
+    delete dummy;
+    return to_return;
+    // cout<<"merge"<<endl;
+}
+//链表归并排序函数主体
+Node* merge_sort(Node* head){
+    if(head->next==nullptr) return nullptr;
+    Node* second_half=divide_from(head);
+    merge_sort(head);
+    merge_sort(second_half);
+    return merge(head,second_half);
+}
+//快速排序辅助函数
+int partition(vector<int>& v,int low,int high){
+    swap(v[low],v[(low+high)/2]);
+    int pivot=v[low];
+    int last_small=low;
+    for(int i=low+1;i<=high;i++){
+        if(v[i]<pivot){
+            last_small++;
+            swap(v[i],v[last_small]);
+        }
+    }
+    swap(v[low],v[last_small]);
+    return last_small;
+}
+//快速排序主体函数
+void quick_sort(vector<int>& v,int low,int high){//high下标可访问
+    if(low>=high){
+		cout<<"quick_sort finished"<<endl;
+		return;
+	}
+    int pivot_position=partition(v,low,high);
+    quick_sort(v,low,pivot_position-1);
+    quick_sort(v,pivot_position+1,high);
+}
+//堆排辅助函数
+void insert_heap(vector<int>& v,int cur,int low,int high){//high下标可访问
+	int large=2*low+1;
+	while(large<=high){
+		if(large<high&&v[large]<v[large+1]) large++;
+		if(cur>=v[large]) break;
+		v[low]=v[large];
+		low=large;
+		large=2*low+1;
+	}
+	v[low]=cur;
+}
+void build_heap(vector<int>& v){
+	int n=v.size();
+	int last_parent=n/2-1;//最后一个父节点
+	while(last_parent>=0){
+		insert_heap(v,v[last_parent],last_parent,n-1);
+		last_parent--;
+	}
+}
+//堆排函数主体
+void heap_sort(vector<int>& v){
+	build_heap(v);
+	for(int last_unsorted=v.size()-1;last_unsorted>=0;last_unsorted--){
+		insert_heap(v,v[last_unsorted],0,last_unsorted);
+		v[last_unsorted]=v[0];
+	}
+	cout<<"heap_sort finished"<<endl;
+}
+//test whether the sort_mothed is wrong
+void test_sorted(vector<int>& v){
+	bool is_wrong=false;
+	int	n=v.size();
+	for(int i=1;i<n;i++){
+		if(v[i]<v[i-1]){
+			is_wrong=true;
+		}
+	}
+	if(is_wrong) cout<<"error"<<endl;
+	else cout<<"vector sorted successfully"<<endl;
+}
+//test whether the sort_mothed for a list is wrong
+void test_sorted(Node* head){
+	bool is_wrong=false;
+	if(head->next==nullptr||head->next->next==nullptr) return;
+	Node* pre=head->next;
+	Node* cur=pre->next;
+	while(cur!=nullptr){
+		if(cur->val<pre->val){
+			is_wrong=true;
+		}
+		pre=cur;
+		cur=pre->next;
+	}
+	if(is_wrong) cout<<"error"<<endl;
+	else cout<<"list sorted successfully"<<endl;
+}
+//test
+int main(){
+	srand((unsigned)time(NULL));
+    int n=100;
+    vector<int> arr(n);
+    for(int i=0;i<n;i++){
+        arr[i]=rand()%1000;
+    }
+    // print(arr);
+    // shell_sort(arr);
+    // merge_sort(arr,0,n-1);
+    // quick_sort(arr,0,n-1);
+	heap_sort(arr);
+    test_sorted(arr);
+    // print(arr);
+
+	Node* dummy=new Node();
+	for(int i=n-1;i>=0;i--){
+		Node* temp=new Node(arr[i]);
+		temp->next=dummy->next;
+		dummy->next=temp;
+	}
+    Node* new_head=merge_sort(dummy->next);
+    dummy->next=new_head;
+	test_sorted(dummy);
+	// print(dummy);
+}
